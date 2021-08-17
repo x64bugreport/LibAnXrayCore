@@ -9,13 +9,13 @@ import (
 	"strings"
 	"sync"
 
-	core "github.com/v2fly/v2ray-core/v4"
-	appLog "github.com/v2fly/v2ray-core/v4/app/log"
-	commonLog "github.com/v2fly/v2ray-core/v4/common/log"
-	"github.com/v2fly/v2ray-core/v4/common/platform/filesystem"
-	"github.com/v2fly/v2ray-core/v4/features/stats"
-	"github.com/v2fly/v2ray-core/v4/infra/conf/serial"
-	_ "github.com/v2fly/v2ray-core/v4/main/distro/all"
+	appLog "github.com/xtls/xray-core/app/log"
+	commonLog "github.com/xtls/xray-core/common/log"
+	"github.com/xtls/xray-core/common/platform/filesystem"
+	core "github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/features/stats"
+	"github.com/xtls/xray-core/infra/conf/serial"
+	_ "github.com/xtls/xray-core/main/distro/all"
 )
 
 func GetV2RayVersion() string {
@@ -29,9 +29,6 @@ func InitializeV2Ray(assetsPath string, assetsPrefix string, memReader bool) err
 	geoAssetsPath = assetsPath
 
 	filesystem.NewFileReader = func(path string) (io.ReadCloser, error) {
-		return openAssets(assetsPrefix, path, memReader)
-	}
-	filesystem.NewFileSeeker = func(path string) (io.ReadSeekCloser, error) {
 		return openAssets(assetsPrefix, path, memReader)
 	}
 
