@@ -4,15 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"strings"
 	"sync"
 
-	appLog "github.com/xtls/xray-core/app/log"
-	commonLog "github.com/xtls/xray-core/common/log"
 	"github.com/xtls/xray-core/common/platform/filesystem"
-	core "github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/features/stats"
 	"github.com/xtls/xray-core/infra/conf/serial"
 	_ "github.com/xtls/xray-core/main/distro/all"
@@ -35,32 +31,6 @@ func InitializeV2Ray(assetsPath string, assetsPrefix string, memReader bool) err
 	return nil
 }
 
-type stdoutLogWriter struct {
-	logger *log.Logger
-}
-
-func (w *stdoutLogWriter) Write(s string) error {
-	w.logger.Print(s)
-	return nil
-}
-
-func (w *stdoutLogWriter) Close() error {
-	return nil
-}
-
-func init() {
-	_ = appLog.RegisterHandlerCreator(appLog.LogType_Console,
-		func(lt appLog.LogType,
-			options appLog.HandlerCreatorOptions) (commonLog.Handler, error) {
-			logger := log.New(os.Stdout, "", 0)
-			return commonLog.NewLogger(func() commonLog.Writer {
-				return &stdoutLogWriter{
-					logger: logger,
-				}
-			}), nil
-		})
-}
-
 type V2RayInstance struct {
 	access       sync.Mutex
 	started      bool
@@ -68,16 +38,20 @@ type V2RayInstance struct {
 	statsManager stats.Manager
 }
 
-func NewV2rayInstance() V2RayInstance {
-	return V2RayInstance{}
+func NewV2rayInstance() *V2RayInstance {
+	return &V2RayInstance{}
 }
 
-func (instance *V2RayInstance) LoadConfig(content string) error {
+func (instance *V2RayInstance) LoadConfig(content string, forTest bool) error {
 	instance.access.Lock()
 	defer instance.access.Unlock()
 	config, err := serial.LoadJSONConfig(strings.NewReader(content))
 	if err != nil {
 		return err
+	}
+	if forTest {
+		config.Inbound = nil
+		config.App = config.App[:4]
 	}
 	c, err := core.New(config)
 	if err != nil {
