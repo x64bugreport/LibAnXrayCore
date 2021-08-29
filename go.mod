@@ -18,4 +18,4 @@ require (
 
 replace github.com/Dreamacro/clash v1.6.5 => github.com/ClashDotNetFramework/experimental-clash v1.7.2
 
-replace github.com/xtls/xray-core v1.4.2 => github.com/nekohasekai/xray-core v1.4.3-0.20210828131252-6a8426c7ba98
+replace github.com/xtls/xray-core v1.4.2 => github.com/nekohasekai/xray-core v1.4.3-0.20210829115729-8bf2900726d4

@@ -289,7 +289,7 @@ func (t *Tun2socks) addPacket(packet core.UDPPacket) {
 			defer packet.Drop()
 		}
 
-		_, err := conn.Write(packet.Data())
+		_, err := conn.WriteTo(packet.Data(), packet.LocalAddr())
 		if err != nil {
 			_ = conn.Close()
 		}
@@ -395,7 +395,7 @@ func (t *Tun2socks) addPacket(packet core.UDPPacket) {
 		})
 	}
 
-	conn, err := v2rayCore.Dial(ctx, t.v2ray.core, dest)
+	conn, err := v2rayCore.DialUDP(ctx, t.v2ray.core)
 
 	if err != nil {
 		log.Errorf("[UDP] dial failed: %s", err.Error())
@@ -421,7 +421,7 @@ func (t *Tun2socks) addPacket(packet core.UDPPacket) {
 					atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
 				}
 			}()
-			conn = &statsConn{conn, &stats.uplink, &stats.downlink}
+			conn = &statsPacketConn{conn, &stats.uplink, &stats.downlink}
 		}
 	}
 
@@ -432,11 +432,14 @@ func (t *Tun2socks) addPacket(packet core.UDPPacket) {
 	buf := pool.Get(pool.RelayBufferSize)
 
 	for {
-		n, err := conn.Read(buf)
+		n, addr, err := conn.ReadFrom(buf)
 		if err != nil {
 			break
 		}
-		_, err = packet.WriteBack(buf[:n], nil)
+		if isDns {
+			addr = nil
+		}
+		_, err = packet.WriteBack(buf[:n], addr)
 		if err != nil {
 			break
 		}
@@ -464,16 +467,16 @@ type natTable struct {
 	mapping sync.Map
 }
 
-func (t *natTable) Set(key string, pc net.Conn) {
+func (t *natTable) Set(key string, pc net.PacketConn) {
 	t.mapping.Store(key, pc)
 }
 
-func (t *natTable) Get(key string) net.Conn {
+func (t *natTable) Get(key string) net.PacketConn {
 	item, exist := t.mapping.Load(key)
 	if !exist {
 		return nil
 	}
-	return item.(net.Conn)
+	return item.(net.PacketConn)
 }
 
 func (t *natTable) GetOrCreateLock(key string) (*sync.Cond, bool) {
