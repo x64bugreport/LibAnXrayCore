@@ -3,32 +3,17 @@ package libcore
 import (
 	"errors"
 	"fmt"
-	"io"
-	"strings"
-	"sync"
-
-	"github.com/xtls/xray-core/common/platform/filesystem"
-	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/features/stats"
 	"github.com/xtls/xray-core/infra/conf/serial"
 	_ "github.com/xtls/xray-core/main/distro/all"
+	"strings"
+	"sync"
+
+	"github.com/xtls/xray-core/core"
 )
 
 func GetV2RayVersion() string {
 	return core.Version()
-}
-
-var geoAssetsPath string
-
-func InitializeV2Ray(assetsPath string, assetsPrefix string, memReader bool) error {
-
-	geoAssetsPath = assetsPath
-
-	filesystem.NewFileReader = func(path string) (io.ReadCloser, error) {
-		return openAssets(assetsPrefix, path, memReader)
-	}
-
-	return nil
 }
 
 type V2RayInstance struct {
@@ -47,6 +32,24 @@ func (instance *V2RayInstance) LoadConfig(content string, forTest bool) error {
 	defer instance.access.Unlock()
 	config, err := serial.LoadJSONConfig(strings.NewReader(content))
 	if err != nil {
+		if strings.HasSuffix(err.Error(), "not found in geoip.dat") {
+			err = extractAssetName(geoipDat, true)
+			if err != nil {
+				return err
+			}
+		} else if strings.HasSuffix(err.Error(), "not found in geosite.dat") {
+			err = extractAssetName(geositeDat, true)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+
+		config, err = serial.LoadJSONConfig(strings.NewReader(content))
+		if err != nil {
+			return err
+		}
 		return err
 	}
 	if forTest {
