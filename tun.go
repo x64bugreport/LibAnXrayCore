@@ -191,15 +191,19 @@ func (t *Tun2socks) Add(conn core.TCPConn) {
 
 	ctx := session.ContextWithInbound(context.Background(), inbound)
 
-	if !isDns && t.sniffing {
+	if !isDns && (t.sniffing || t.fakedns) {
 		req := session.SniffingRequest{
 			Enabled:      true,
-			MetadataOnly: false,
+			MetadataOnly: t.fakedns && !t.sniffing,
 		}
-		if !t.fakedns {
-			req.OverrideDestinationForProtocol = []string{"http", "tls"}
-		} else {
+		if t.sniffing && t.fakedns {
 			req.OverrideDestinationForProtocol = []string{"fakedns", "http", "tls"}
+		}
+		if t.sniffing && !t.fakedns {
+			req.OverrideDestinationForProtocol = []string{"http", "tls"}
+		}
+		if !t.sniffing && t.fakedns {
+			req.OverrideDestinationForProtocol = []string{"fakedns"}
 		}
 		ctx = session.ContextWithContent(ctx, &session.Content{
 			SniffingRequest: req,
@@ -380,18 +384,13 @@ func (t *Tun2socks) addPacket(packet core.UDPPacket) {
 
 	ctx := session.ContextWithInbound(context.Background(), inbound)
 
-	if !isDns && t.sniffing {
-		req := session.SniffingRequest{
-			Enabled:      true,
-			MetadataOnly: false,
-		}
-		if !t.fakedns {
-			req.OverrideDestinationForProtocol = []string{"http", "tls"}
-		} else {
-			req.OverrideDestinationForProtocol = []string{"fakedns", "http", "tls"}
-		}
+	if !isDns && t.fakedns {
 		ctx = session.ContextWithContent(ctx, &session.Content{
-			SniffingRequest: req,
+			SniffingRequest: session.SniffingRequest{
+				Enabled:                        true,
+				MetadataOnly:                   t.fakedns && !t.sniffing,
+				OverrideDestinationForProtocol: []string{"fakedns"},
+			},
 		})
 	}
 
@@ -454,13 +453,33 @@ func (t *Tun2socks) addPacket(packet core.UDPPacket) {
 }
 
 func (t *Tun2socks) dialDNS(ctx context.Context, _, _ string) (net.Conn, error) {
-	return v2rayCore.Dial(session.ContextWithInbound(ctx, &session.Inbound{
+	conn, err := v2rayCore.Dial(session.ContextWithInbound(ctx, &session.Inbound{
 		Tag: "dns-in",
 	}), t.v2ray.core, v2rayNet.Destination{
-		Network: v2rayNet.Network_TCP,
+		Network: v2rayNet.Network_UDP,
 		Address: v2rayNet.ParseAddress("1.0.0.1"),
 		Port:    53,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &wrappedConn{conn}, nil
+}
+
+type wrappedConn struct {
+	net.Conn
+}
+
+func (c wrappedConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
+	n, err = c.Conn.Read(p)
+	if err == nil {
+		addr = c.Conn.RemoteAddr()
+	}
+	return
+}
+
+func (c wrappedConn) WriteTo(p []byte, _ net.Addr) (n int, err error) {
+	return c.Conn.Write(p)
 }
 
 type natTable struct {

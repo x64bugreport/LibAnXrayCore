@@ -485,10 +485,8 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/neelance/astrewrite v0.0.0-20160511093645-99348263ae86/go.mod h1:kHJEU3ofeGjhHklVoIGuVj85JJwZ6kWPaJwCIxgnFmo=
 github.com/neelance/sourcemap v0.0.0-20151028013722-8c68805598ab/go.mod h1:Qr6/a/Q4r9LP1IltGz7tA7iOK1WonHEYhu1HRBA7ZiM=
-github.com/nekohasekai/xray-core v1.4.3-0.20210829113729-643da1e870f2 h1:XAFkAUvA3EAajFUjAfFoUg66/2ElU82iJRlmMM24+fM=
-github.com/nekohasekai/xray-core v1.4.3-0.20210829113729-643da1e870f2/go.mod h1:DmL/9rOCliev/a6HciWEvSJVEhUF6C0EpD3clW8v0pc=
-github.com/nekohasekai/xray-core v1.4.3-0.20210829114305-5b993851d51e/go.mod h1:DmL/9rOCliev/a6HciWEvSJVEhUF6C0EpD3clW8v0pc=
-github.com/nekohasekai/xray-core v1.4.3-0.20210829115729-8bf2900726d4/go.mod h1:DmL/9rOCliev/a6HciWEvSJVEhUF6C0EpD3clW8v0pc=
+github.com/nekohasekai/xray-core v1.4.3-0.20210901031618-45473b7dfe3f h1:lNPSl11GrYB8Sr9e8RDzTzhihHaRwX/HJuxZi600F9s=
+github.com/nekohasekai/xray-core v1.4.3-0.20210901031618-45473b7dfe3f/go.mod h1:DmL/9rOCliev/a6HciWEvSJVEhUF6C0EpD3clW8v0pc=
 github.com/nxadm/tail v1.4.4 h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
@@ -927,6 +925,7 @@ golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf h1:2ucpDCmfkl8Bd/FsLtiD653Wf96cW37s+iGx93zsu4k=
 golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
+golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 h1:v+OssWQX+hTHEmOBgwxdZxK4zHq3yOs8F9J7mk0PY8E=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/text v0.0.0-20160726164857-2910a502d2bf/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
