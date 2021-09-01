@@ -14,12 +14,10 @@ import (
 )
 
 const (
-	geoipDat         = "geoip.dat"
-	geositeDat       = "geosite.dat"
-	browserForwarder = "index.js"
-	geoipVersion     = "geoip.version.txt"
-	geositeVersion   = "geosite.version.txt"
-	coreVersion      = "core.version.txt"
+	geoipDat       = "geoip.dat"
+	geositeDat     = "geosite.dat"
+	geoipVersion   = "geoip.version.txt"
+	geositeVersion = "geosite.version.txt"
 )
 
 var assetsPrefix string
@@ -98,27 +96,19 @@ func InitializeV2Ray(internalAssets string, externalAssets string, prefix string
 
 		extract(geoipDat)
 		extract(geositeDat)
-		extract(browserForwarder)
 	}()
 
 	return nil
 }
 
 func extractAssetName(name string, force bool) error {
-	var dir string
-	if name == browserForwarder {
-		dir = internalAssetsPath
-	} else {
-		dir = externalAssetsPath
-	}
+	dir := externalAssetsPath
 	var version string
 	switch name {
 	case geoipDat:
 		version = geoipVersion
 	case geositeDat:
 		version = geositeVersion
-	case browserForwarder:
-		version = coreVersion
 	}
 
 	var localVersion string
