@@ -14,6 +14,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 type ClashBasedInstance struct {
@@ -72,10 +73,7 @@ func (s *ClashBasedInstance) Close() error {
 		closeIgnore(closer)
 	}
 
-	err := s.in.Close()
-	if err != nil {
-		return err
-	}
+	s.in.Close()
 	close(s.ctx)
 	return nil
 }
@@ -150,6 +148,19 @@ func networkForClash(network string) clashC.NetWork {
 	}
 	log.Fatalln("unexpected network name", network)
 	return 0
+}
+
+func tcpKeepAlive(c net.Conn) {
+	if tcp, ok := c.(*net.TCPConn); ok {
+		_ = tcp.SetKeepAlive(true)
+		_ = tcp.SetKeepAlivePeriod(30 * time.Second)
+	}
+}
+
+func safeConnClose(c net.Conn, err error) {
+	if err != nil {
+		_ = c.Close()
+	}
 }
 
 func NewShadowsocksInstance(socksPort int32, server string, port int32, password string, cipher string, plugin string, pluginOpts string) (*ClashBasedInstance, error) {

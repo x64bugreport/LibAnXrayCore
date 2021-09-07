@@ -21,6 +21,7 @@ type V2RayInstance struct {
 	started      bool
 	core         *core.Instance
 	statsManager stats.Manager
+	//observatory  *observatory.Observer
 }
 
 func NewV2rayInstance() *V2RayInstance {
@@ -32,12 +33,12 @@ func (instance *V2RayInstance) LoadConfig(content string, forTest bool) error {
 	defer instance.access.Unlock()
 	config, err := serial.LoadJSONConfig(strings.NewReader(content))
 	if err != nil {
-		if strings.HasSuffix(err.Error(), "not found in geoip.dat") {
+		if strings.HasSuffix(err.Error(), "not found in geoip.dat") || strings.HasSuffix(err.Error(), "geoip.dat: no such file or directory") {
 			err = extractAssetName(geoipDat, true)
 			if err != nil {
 				return err
 			}
-		} else if strings.HasSuffix(err.Error(), "not found in geosite.dat") {
+		} else if strings.HasSuffix(err.Error(), "not found in geosite.dat") || strings.HasSuffix(err.Error(), "geosite.dat: no such file or directory") {
 			err = extractAssetName(geositeDat, true)
 			if err != nil {
 				return err
@@ -62,6 +63,10 @@ func (instance *V2RayInstance) LoadConfig(content string, forTest bool) error {
 	}
 	instance.core = c
 	instance.statsManager = c.GetFeature(stats.ManagerType()).(stats.Manager)
+	/*o := c.GetFeature(extension.ObservatoryType())
+	if o != nil {
+		instance.observatory = o.(*observatory.Observer)
+	}*/
 	return nil
 }
 

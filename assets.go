@@ -149,7 +149,7 @@ func extractAssetName(name string, force bool) error {
 				doExtract = assetVersion != localVersion || force
 			} else {
 				lv, err := strconv.ParseUint(localVersion, 10, 64)
-				doExtract = err != nil || av > lv || av == lv && force
+				doExtract = err != nil || av > lv || force
 			}
 		}
 	}
@@ -166,7 +166,7 @@ func extractAssetName(name string, force bool) error {
 
 	err := extractAsset(assetsPrefix+name+".xz", dir+name)
 	if err == nil {
-		err = Unxz(dir + name)
+		err = unxz(dir + name)
 
 	}
 	if err != nil {
