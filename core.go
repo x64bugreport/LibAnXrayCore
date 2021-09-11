@@ -7,10 +7,6 @@ import (
 	"runtime"
 )
 
-func init() {
-	initLog()
-}
-
 func Setenv(key, value string) error {
 	return os.Setenv(key, value)
 }
@@ -33,6 +29,11 @@ func Gc() {
 	runtime.GC()
 }
 
-func closeIgnore(closer io.Closer) {
-	_ = closer.Close()
+func closeIgnore(closer ...io.Closer) {
+	for _, c := range closer {
+		if c == nil {
+			continue
+		}
+		_ = c.Close()
+	}
 }
