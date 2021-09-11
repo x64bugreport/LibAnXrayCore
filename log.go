@@ -24,7 +24,7 @@ import (
 
 var (
 	tag      = C.CString("libcore")
-	tagV2Ray = C.CString("v2ray-core")
+	tagV2Ray = C.CString("xray-core")
 )
 
 var levels = []logrus.Level{
