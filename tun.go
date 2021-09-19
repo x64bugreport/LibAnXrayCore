@@ -6,10 +6,13 @@ import (
 	"github.com/Dreamacro/clash/common/pool"
 	"github.com/miekg/dns"
 	"github.com/sirupsen/logrus"
+	"github.com/xtls/xray-core/common/buf"
 	v2rayNet "github.com/xtls/xray-core/common/net"
 	"github.com/xtls/xray-core/common/session"
 	"github.com/xtls/xray-core/common/task"
-	v2rayCore "github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/core"
+	v2rayDns "github.com/xtls/xray-core/features/dns"
+	"github.com/xtls/xray-core/transport/internet"
 	"io"
 	"libcore/gvisor"
 	"libcore/lwip"
@@ -24,15 +27,16 @@ import (
 var _ tun.Handler = (*Tun2ray)(nil)
 
 type Tun2ray struct {
-	access    sync.Mutex
-	dev       tun.Tun
-	router    string
-	hijackDns bool
-	v2ray     *V2RayInstance
-	udpTable  *natTable
-	fakedns   bool
-	sniffing  bool
-	debug     bool
+	access              sync.Mutex
+	dev                 tun.Tun
+	router              string
+	hijackDns           bool
+	v2ray               *V2RayInstance
+	udpTable            *natTable
+	fakedns             bool
+	sniffing            bool
+	overrideDestination bool
+	debug               bool
 
 	dumpUid      bool
 	trafficStats bool
@@ -44,7 +48,7 @@ const (
 	appStatusBackground = "background"
 )
 
-func NewTun2ray(fd int32, mtu int32, v2ray *V2RayInstance, router string, gVisor bool, hijackDns bool, sniffing bool, fakedns bool, debug bool, dumpUid bool, trafficStats bool) (*Tun2ray, error) {
+func NewTun2ray(fd int32, mtu int32, v2ray *V2RayInstance, router string, gVisor bool, hijackDns bool, sniffing bool, overrideDestination bool, fakedns bool, debug bool, dumpUid bool, trafficStats bool) (*Tun2ray, error) {
 	/*	if fd < 0 {
 			return nil, errors.New("must provide a valid TUN file descriptor")
 		}
@@ -64,15 +68,16 @@ func NewTun2ray(fd int32, mtu int32, v2ray *V2RayInstance, router string, gVisor
 		logrus.SetLevel(logrus.WarnLevel)
 	}
 	t := &Tun2ray{
-		router:       router,
-		hijackDns:    hijackDns,
-		v2ray:        v2ray,
-		udpTable:     &natTable{},
-		sniffing:     sniffing,
-		fakedns:      fakedns,
-		debug:        debug,
-		dumpUid:      dumpUid,
-		trafficStats: trafficStats,
+		router:              router,
+		hijackDns:           hijackDns,
+		v2ray:               v2ray,
+		udpTable:            &natTable{},
+		sniffing:            sniffing,
+		overrideDestination: overrideDestination,
+		fakedns:             fakedns,
+		debug:               debug,
+		dumpUid:             dumpUid,
+		trafficStats:        trafficStats,
 	}
 
 	if trafficStats {
@@ -87,6 +92,24 @@ func NewTun2ray(fd int32, mtu int32, v2ray *V2RayInstance, router string, gVisor
 	if err != nil {
 		return nil, err
 	}
+
+	dc := v2ray.dnsClient
+	internet.UseAlternativeSystemDialer(&protectedDialer{
+		resolver: func(domain string) ([]net.IP, error) {
+			return dc.LookupIP(domain, v2rayDns.IPOption{
+				IPv4Enable: true,
+				IPv6Enable: true,
+				FakeEnable: false,
+			})
+		},
+	})
+
+	nc := &net.Resolver{PreferGo: false}
+	internet.UseAlternativeSystemDNSDialer(&protectedDialer{
+		resolver: func(domain string) ([]net.IP, error) {
+			return nc.LookupIP(context.Background(), "ip", domain)
+		},
+	})
 
 	net.DefaultResolver.Dial = t.dialDNS
 	return t, nil
@@ -151,6 +174,7 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 		req := session.SniffingRequest{
 			Enabled:      true,
 			MetadataOnly: t.fakedns && !t.sniffing,
+			RouteOnly:    !t.overrideDestination,
 		}
 		if t.sniffing && t.fakedns {
 			req.OverrideDestinationForProtocol = []string{"fakedns", "http", "tls"}
@@ -166,7 +190,7 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 		})
 	}
 
-	destConn, err := v2rayCore.Dial(ctx, t.v2ray.core, destination)
+	link, err := t.v2ray.dispatcher.Dispatch(core.WithContext(ctx, t.v2ray.core), destination)
 
 	if err != nil {
 		logrus.Errorf("[TCP] dial failed: %s", err.Error())
@@ -174,39 +198,36 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 	}
 
 	if t.trafficStats && !self && !isDns {
-
-		t.access.Lock()
-		if !t.trafficStats {
-			t.access.Unlock()
-		} else {
-
-			stats := t.appStats[uid]
+		stats := t.appStats[uid]
+		if stats == nil {
+			t.access.Lock()
+			stats = t.appStats[uid]
 			if stats == nil {
 				stats = &appStats{}
 				t.appStats[uid] = stats
 			}
 			t.access.Unlock()
-			atomic.AddInt32(&stats.tcpConn, 1)
-			atomic.AddUint32(&stats.tcpConnTotal, 1)
-			atomic.StoreInt64(&stats.deactivateAt, 0)
-			defer func() {
-				if atomic.AddInt32(&stats.tcpConn, -1)+atomic.LoadInt32(&stats.udpConn) == 0 {
-					atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
-				}
-			}()
-			destConn = &statsConn{destConn, &stats.uplink, &stats.downlink}
 		}
+		atomic.AddInt32(&stats.tcpConn, 1)
+		atomic.AddUint32(&stats.tcpConnTotal, 1)
+		atomic.StoreInt64(&stats.deactivateAt, 0)
+		defer func() {
+			if atomic.AddInt32(&stats.tcpConn, -1)+atomic.LoadInt32(&stats.udpConn) == 0 {
+				atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
+			}
+		}()
+		conn = &statsConn{conn, &stats.uplink, &stats.downlink}
 	}
 
 	_ = task.Run(ctx, func() error {
-		_, _ = io.Copy(conn, destConn)
+		_ = buf.Copy(buf.NewReader(conn), link.Writer)
 		return io.EOF
 	}, func() error {
-		_, _ = io.Copy(destConn, conn)
+		_ = buf.Copy(link.Reader, buf.NewWriter(conn))
 		return io.EOF
 	})
 
-	closeIgnore(conn, destConn)
+	closeIgnore(conn, link.Reader, link.Writer)
 }
 
 func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.Destination, data []byte, writeBack func([]byte, *net.UDPAddr) (int, error), closer io.Closer) {
@@ -314,11 +335,12 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 				Enabled:                        true,
 				MetadataOnly:                   t.fakedns && !t.sniffing,
 				OverrideDestinationForProtocol: []string{"fakedns"},
+				RouteOnly:                      !t.overrideDestination,
 			},
 		})
 	}
 
-	conn, err := v2rayCore.DialUDP(ctx, t.v2ray.core)
+	conn, err := t.v2ray.dialUDP(ctx)
 
 	if err != nil {
 		logrus.Errorf("[UDP] dial failed: %s", err.Error())
@@ -326,43 +348,46 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 	}
 
 	if t.trafficStats && !self && !isDns {
-		t.access.Lock()
-		if !t.trafficStats {
-			t.access.Unlock()
-		} else {
-			stats := t.appStats[uid]
+		stats := t.appStats[uid]
+		if stats == nil {
+			t.access.Lock()
+			stats = t.appStats[uid]
 			if stats == nil {
 				stats = &appStats{}
 				t.appStats[uid] = stats
 			}
 			t.access.Unlock()
-			atomic.AddInt32(&stats.udpConn, 1)
-			atomic.AddUint32(&stats.udpConnTotal, 1)
-			atomic.StoreInt64(&stats.deactivateAt, 0)
-			defer func() {
-				if atomic.AddInt32(&stats.udpConn, -1)+atomic.LoadInt32(&stats.tcpConn) == 0 {
-					atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
-				}
-			}()
-			conn = &statsPacketConn{conn, &stats.uplink, &stats.downlink}
 		}
+		atomic.AddInt32(&stats.udpConn, 1)
+		atomic.AddUint32(&stats.udpConnTotal, 1)
+		atomic.StoreInt64(&stats.deactivateAt, 0)
+		defer func() {
+			if atomic.AddInt32(&stats.udpConn, -1)+atomic.LoadInt32(&stats.tcpConn) == 0 {
+				atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
+			}
+		}()
+		conn = &statsPacketConn{conn, &stats.uplink, &stats.downlink}
 	}
 
 	t.udpTable.Set(natKey, conn)
 
 	go sendTo()
 
-	buf := pool.Get(pool.RelayBufferSize)
+	buffer := pool.Get(pool.RelayBufferSize)
 
 	for {
-		n, addr, err := conn.ReadFrom(buf)
+		n, addr, err := conn.ReadFrom(buffer)
 		if err != nil {
 			break
 		}
 		if isDns {
 			addr = nil
 		}
-		_, err = writeBack(buf[:n], addr.(*net.UDPAddr))
+		if addr, ok := addr.(*net.UDPAddr); ok {
+			_, err = writeBack(buffer[:n], addr)
+		} else {
+			_, err = writeBack(buffer[:n], nil)
+		}
 		if err != nil {
 			break
 		}
@@ -370,23 +395,24 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 
 	// close
 
-	_ = pool.Put(buf)
+	_ = pool.Put(buffer)
 	closeIgnore(conn, closer)
 	t.udpTable.Delete(natKey)
 }
 
-func (t *Tun2ray) dialDNS(ctx context.Context, _, _ string) (net.Conn, error) {
-	conn, err := v2rayCore.Dial(session.ContextWithInbound(ctx, &session.Inbound{
-		Tag: "dns-in",
-	}), t.v2ray.core, v2rayNet.Destination{
+func (t *Tun2ray) dialDNS(ctx context.Context, _, _ string) (conn net.Conn, err error) {
+	conn, err = t.v2ray.dialContext(session.ContextWithInbound(ctx, &session.Inbound{
+		Tag:         "dns-in",
+		SkipFakeDNS: true,
+	}), v2rayNet.Destination{
 		Network: v2rayNet.Network_UDP,
 		Address: v2rayNet.ParseAddress("1.0.0.1"),
 		Port:    53,
 	})
-	if err != nil {
-		return nil, err
+	if err == nil {
+		conn = wrappedConn{conn}
 	}
-	return &wrappedConn{conn}, nil
+	return
 }
 
 type wrappedConn struct {

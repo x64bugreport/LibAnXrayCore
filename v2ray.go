@@ -1,11 +1,18 @@
 package libcore
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	v2rayNet "github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/common/net/cnc"
+	"github.com/xtls/xray-core/features/dns"
+	"github.com/xtls/xray-core/features/routing"
 	"github.com/xtls/xray-core/features/stats"
 	"github.com/xtls/xray-core/infra/conf/serial"
 	_ "github.com/xtls/xray-core/main/distro/all"
+	"github.com/xtls/xray-core/transport/internet/udp"
+	"net"
 	"strings"
 	"sync"
 
@@ -13,7 +20,7 @@ import (
 )
 
 func GetV2RayVersion() string {
-	return core.Version()
+	return core.Version() + "-sn-1"
 }
 
 type V2RayInstance struct {
@@ -22,6 +29,8 @@ type V2RayInstance struct {
 	core         *core.Instance
 	statsManager stats.Manager
 	//observatory  *observatory.Observer
+	dispatcher routing.Dispatcher
+	dnsClient  dns.Client
 }
 
 func NewV2rayInstance() *V2RayInstance {
@@ -63,6 +72,9 @@ func (instance *V2RayInstance) LoadConfig(content string, forTest bool) error {
 	}
 	instance.core = c
 	instance.statsManager = c.GetFeature(stats.ManagerType()).(stats.Manager)
+	instance.dispatcher = c.GetFeature(routing.DispatcherType()).(routing.Dispatcher)
+	instance.dnsClient = c.GetFeature(dns.ClientType()).(dns.Client)
+
 	/*o := c.GetFeature(extension.ObservatoryType())
 	if o != nil {
 		instance.observatory = o.(*observatory.Observer)
@@ -105,4 +117,24 @@ func (instance *V2RayInstance) Close() error {
 		return instance.core.Close()
 	}
 	return nil
+}
+
+func (instance *V2RayInstance) dialContext(ctx context.Context, destination v2rayNet.Destination) (net.Conn, error) {
+	ctx = core.WithContext(ctx, instance.core)
+	r, err := instance.dispatcher.Dispatch(ctx, destination)
+	if err != nil {
+		return nil, err
+	}
+	var readerOpt cnc.ConnectionOption
+	if destination.Network == v2rayNet.Network_TCP {
+		readerOpt = cnc.ConnectionOutputMulti(r.Reader)
+	} else {
+		readerOpt = cnc.ConnectionOutputMultiUDP(r.Reader)
+	}
+	return cnc.NewConnection(cnc.ConnectionInputMulti(r.Writer), readerOpt), nil
+}
+
+func (instance *V2RayInstance) dialUDP(ctx context.Context) (net.PacketConn, error) {
+	ctx = core.WithContext(ctx, instance.core)
+	return udp.DialDispatcher(ctx, instance.dispatcher)
 }
