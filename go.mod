@@ -21,7 +21,7 @@ require (
 replace gvisor.dev/gvisor v0.0.0 => github.com/sagernet/gvisor v0.0.0-20210909160323-ce37d6df1e92
 
 //replace github.com/xtls/xray-core v1.4.3 => ../Xray-core
-replace github.com/xtls/xray-core v1.4.3 => github.com/sagernet/xray-core v1.4.4-0.20210919122838-21559f2e837f
+replace github.com/xtls/xray-core v1.4.3 => github.com/sagernet/xray-core v1.4.4-0.20210920061328-ef9cb126723e
 
 replace github.com/Dreamacro/clash v1.6.5 => github.com/sagernet/clash v1.6.5-0.20210913182617-681dd3780179
 
