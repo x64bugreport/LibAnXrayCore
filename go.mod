@@ -13,15 +13,15 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/ulikunitz/xz v0.5.10
 	github.com/xtls/xray-core v1.4.3
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/sys v0.0.0-20210909193231-528a39cd75f3
+	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
+	golang.org/x/sys v0.0.0-20210917161153-d61c044b1678
 	gvisor.dev/gvisor v0.0.0
 )
 
 replace gvisor.dev/gvisor v0.0.0 => github.com/sagernet/gvisor v0.0.0-20210909160323-ce37d6df1e92
 
 //replace github.com/xtls/xray-core v1.4.3 => ../Xray-core
-replace github.com/xtls/xray-core v1.4.3 => github.com/sagernet/xray-core v1.4.4-0.20210920061328-ef9cb126723e
+replace github.com/xtls/xray-core v1.4.3 => github.com/sagernet/xray-core v1.4.4-0.20210920125505-5a70982171b1
 
 replace github.com/Dreamacro/clash v1.6.5 => github.com/sagernet/clash v1.6.5-0.20210913182617-681dd3780179
 
@@ -48,13 +48,13 @@ require (
 	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
-	github.com/pires/go-proxyproto v0.6.0 // indirect
+	github.com/pires/go-proxyproto v0.6.1 // indirect
 	github.com/refraction-networking/utls v0.0.0-20210713165636-0b2885c8c0d4 // indirect
 	github.com/seiflotfy/cuckoofilter v0.0.0-20201222105146-bc6005554a0c // indirect
-	github.com/xtls/go v0.0.0-20201118062508-3632bf3b7499 // indirect
+	github.com/xtls/go v0.0.0-20210920065950-d4af136d3672 // indirect
 	go.starlark.net v0.0.0-20210901212718-87f333178d59 // indirect
 	golang.org/x/mod v0.5.0 // indirect
-	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f // indirect
+	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.5 // indirect
