@@ -94,6 +94,15 @@ func NewTun2ray(fd int32, mtu int32, v2ray *V2RayInstance, router string, gVisor
 	}
 
 	dc := v2ray.dnsClient
+
+	if fakedns {
+		_, _ = dc.LookupIP("placeholder", v2rayDns.IPOption{
+			IPv4Enable: false,
+			IPv6Enable: false,
+			FakeEnable: true,
+		})
+	}
+
 	internet.UseAlternativeSystemDialer(&protectedDialer{
 		resolver: func(domain string) ([]net.IP, error) {
 			return dc.LookupIP(domain, v2rayDns.IPOption{
