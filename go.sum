@@ -686,8 +686,8 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 github.com/xtls/go v0.0.0-20201118062508-3632bf3b7499/go.mod h1:5TB2+k58gx4A4g2Nf5miSHNDF6CuAzHKpWBooLAshTs=
 github.com/xtls/go v0.0.0-20210920065950-d4af136d3672 h1:4mkzGhKqt3JO1BWYjtD3iRFyAx4ow67hmSqOcGjuxqQ=
 github.com/xtls/go v0.0.0-20210920065950-d4af136d3672/go.mod h1:YGGVbz9cOxyKFUmhW7LGaLZaMA0cPlHJinvAmVxEMSU=
-github.com/xtls/xray-core v1.5.1-0.20211022054941-db69818f3719 h1:FX71ANRcMGcEGTWgJyRicGkNdA6E8ZQzZXzpbnNnDsk=
-github.com/xtls/xray-core v1.5.1-0.20211022054941-db69818f3719/go.mod h1:t5GTnutkWucuqQoAg81vNoGbq8JY6AxOgd2F0xenA0E=
+github.com/xtls/xray-core v1.5.1-0.20211022092228-bbea20a8f112 h1:YF8X1QNYWbpf3PAHhkgyKcCL/B64x2VAPAK1PHfHahU=
+github.com/xtls/xray-core v1.5.1-0.20211022092228-bbea20a8f112/go.mod h1:t5GTnutkWucuqQoAg81vNoGbq8JY6AxOgd2F0xenA0E=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

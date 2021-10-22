@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/Dreamacro/clash v1.7.1
+	github.com/golang/protobuf v1.5.2
 	github.com/miekg/dns v1.1.43
 	github.com/pkg/errors v0.9.1
 	github.com/sagernet/gomobile v0.0.0-20210905032500-701a995ff844
@@ -21,7 +22,7 @@ require (
 replace gvisor.dev/gvisor v0.0.0 => github.com/sagernet/gvisor v0.0.0-20211022025201-1cae8baac6b3
 
 //replace github.com/xtls/xray-core v1.4.5 => ../Xray-core
-replace github.com/xtls/xray-core v1.5.0 => github.com/xtls/xray-core v1.5.1-0.20211022054941-db69818f3719
+replace github.com/xtls/xray-core v1.5.0 => github.com/xtls/xray-core v1.5.1-0.20211022092228-bbea20a8f112
 
 replace github.com/Dreamacro/clash v1.7.1 => github.com/sagernet/clash v1.6.5-0.20210913182617-681dd3780179
 
@@ -37,7 +38,6 @@ require (
 	github.com/geeksbaek/seed v0.0.0-20180909040025-2a7f5fb92e22 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/gofrs/uuid v4.1.0+incompatible // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/kierdavis/cfb8 v0.0.0-20180105024805-3a17c36ee2f8 // indirect
