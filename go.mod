@@ -18,7 +18,7 @@ require (
 )
 
 //replace gvisor.dev/gvisor v0.0.0 => ../gvisor
-replace gvisor.dev/gvisor v0.0.0 => github.com/sagernet/gvisor v0.0.0-20211014042916-8fb70a9d30b7
+replace gvisor.dev/gvisor v0.0.0 => github.com/sagernet/gvisor v0.0.0-20211022025201-1cae8baac6b3
 
 //replace github.com/xtls/xray-core v1.4.5 => ../Xray-core
 replace github.com/xtls/xray-core v1.5.0 => github.com/xtls/xray-core v1.5.1-0.20211022054941-db69818f3719
